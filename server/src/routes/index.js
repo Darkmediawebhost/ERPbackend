@@ -1,0 +1,40 @@
+import { Router } from 'express';
+import auth from './auth.js';
+import dashboard from './dashboard.js';
+import founders, { finance } from './founders.js';
+import { banks, expenses, income } from './money.js';
+import { clients, payments, projects, tasks } from './commercial.js';
+import invoices from './invoices.js';
+import ledger from './ledger.js';
+import { attendance, employees, salary } from './people.js';
+import { calendar, files, notes, notifications, search, settings } from './workspace.js';
+import reports from './reports.js';
+
+const api = Router();
+
+api.use('/auth', auth);
+api.use('/dashboard', dashboard);
+api.use('/founders', founders);
+api.use('/founder-finance', finance);
+api.use('/clients', clients);
+api.use('/projects', projects);
+api.use('/tasks', tasks);
+api.use('/payments', payments);
+api.use('/income', income);
+api.use('/expenses', expenses);
+api.use('/banks', banks);
+api.use('/ledger', ledger);
+api.use('/invoices', invoices);
+api.use('/employees', employees);
+api.use('/attendance', attendance);
+api.use('/salary', salary);
+api.use('/calendar', calendar);
+api.use('/notes', notes);
+api.use('/notifications', notifications);
+api.use('/reports', reports);
+api.use('/settings', settings);
+api.use('/files', files);
+api.use('/search', search);
+api.use((_req, res) => res.status(404).json({ error: 'API route not found' }));
+
+export default api;
