@@ -609,6 +609,23 @@ const counterSchema = new Schema({
   seq: { type: Number, default: 0 },
 });
 
+const personalEntrySchema = new Schema(
+  {
+    person: { type: String, enum: ['sajeel', 'shakeeb', 'ismail'], required: true, index: true },
+    kind: { type: String, enum: ['income', 'expense'], required: true, index: true },
+    amountPaise: { type: Number, required: true, min: 1 },
+    title: { type: String, required: true, trim: true },
+    dateKey: { type: String, required: true, index: true },
+    note: { type: String, default: '' },
+    bankAccountId: { type: objectId, ref: 'BankAccount' },
+    bankDirection: { type: String, enum: ['', 'in', 'out'], default: '' },
+    movementType: { type: String, enum: ['', 'contribution', 'withdrawal'], default: '' },
+    movementId: objectId,
+    createdBy: { type: objectId, ref: 'User' },
+  },
+  { timestamps: true },
+);
+
 const storedFileSchema = new Schema(
   {
     key: { type: String, required: true, unique: true },
@@ -651,4 +668,5 @@ export const AuditLog = model('AuditLog', auditLogSchema);
 export const CompanySettings = model('CompanySettings', companySettingsSchema);
 export const LoginCode = model('LoginCode', loginCodeSchema);
 export const Counter = model('Counter', counterSchema);
+export const PersonalEntry = model('PersonalEntry', personalEntrySchema);
 export const StoredFile = model('StoredFile', storedFileSchema);

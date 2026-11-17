@@ -7,11 +7,13 @@ import { HttpError } from '../errors.js';
 import { pageQuery, parse, searchRegex, sendList, sortFrom, wrap } from '../http.js';
 import {
   AuditLog,
+  CalendarEvent,
   Client,
   ClientPayment,
   CoFounder,
   Income,
   Invoice,
+  InvoiceItem,
   Project,
   Task,
   User,
@@ -79,15 +81,26 @@ clients.patch('/:id', requirePerm('clients.manage'), wrap(async (req, res) => {
 clients.delete('/:id', requirePerm('clients.manage'), wrap(async (req, res) => {
   const client = await Client.findById(req.params.id);
   if (!client) throw new HttpError('Client not found', 404);
-  const [invoices, payments] = await Promise.all([
+  const [invoices, receipts, income] = await Promise.all([
     Invoice.countDocuments({ clientId: client._id, status: { $ne: 'draft' } }),
     ClientPayment.countDocuments({ clientId: client._id, amountReceivedPaise: { $gt: 0 } }),
+    Income.countDocuments({ clientId: client._id, voided: false }),
   ]);
-  if (invoices || payments) throw new HttpError('Archive this client instead. Issued invoices or receipts cannot be deleted.');
-  client.status = 'archived';
-  await client.save();
-  recordAudit(req, { action: 'archive', entityType: 'client', entityId: client._id, summary: `Archived client ${client.name}` });
-  res.json({ data: client });
+  if (invoices || receipts || income) {
+    throw new HttpError('This client has invoices or received payments, so it cannot be deleted.');
+  }
+  const drafts = await Invoice.find({ clientId: client._id, status: 'draft' }).select('_id');
+  await Promise.all([
+    InvoiceItem.deleteMany({ invoiceId: { $in: drafts.map((invoice) => invoice._id) } }),
+    Invoice.deleteMany({ clientId: client._id, status: 'draft' }),
+    ClientPayment.deleteMany({ clientId: client._id }),
+    Task.deleteMany({ clientId: client._id }),
+    Project.deleteMany({ clientId: client._id }),
+    CalendarEvent.deleteMany({ clientId: client._id }),
+  ]);
+  await client.deleteOne();
+  recordAudit(req, { action: 'delete', entityType: 'client', entityId: client._id, summary: `Deleted client ${client.name}` });
+  res.json({ data: { ok: true } });
 }));
 
 clients.post('/:id/notes', requirePerm('clients.manage'), wrap(async (req, res) => {

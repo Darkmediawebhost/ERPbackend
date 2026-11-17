@@ -8,6 +8,7 @@ import invoices from './invoices.js';
 import ledger from './ledger.js';
 import { attendance, employees, salary } from './people.js';
 import { calendar, files, notes, notifications, search, settings } from './workspace.js';
+import personal from './personal.js';
 import reports from './reports.js';
 
 const api = Router();
@@ -29,6 +30,7 @@ api.use('/employees', employees);
 api.use('/attendance', attendance);
 api.use('/salary', salary);
 api.use('/calendar', calendar);
+api.use('/personal', personal);
 api.use('/notes', notes);
 api.use('/notifications', notifications);
 api.use('/reports', reports);

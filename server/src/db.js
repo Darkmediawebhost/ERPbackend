@@ -22,6 +22,7 @@ import {
   LedgerAccount,
   LoginCode,
   Notification,
+  PersonalEntry,
   ProfitDistribution,
   Project,
   SalaryRecord,
@@ -36,7 +37,7 @@ const models = [
   User, CoFounder, FounderContribution, FounderWithdrawal, ProfitDistribution, Client, Project, Task,
   ClientPayment, BankAccount, Transaction, LedgerAccount, JournalEntry, JournalLine, Invoice, InvoiceItem,
   Income, Expense, Employee, Attendance, SalaryRecord, CalendarEvent, StickyNote, Notification, AuditLog,
-  CompanySettings, Counter, StoredFile, LoginCode,
+  CompanySettings, Counter, PersonalEntry, StoredFile, LoginCode,
 ];
 
 export async function connectDatabase() {
