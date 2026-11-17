@@ -15,20 +15,26 @@ export function signToken(user) {
   return jwt.sign({ sub: String(user._id), tv: user.tokenVersion || 0 }, config.jwtSecret, { expiresIn: '12h' });
 }
 
+function sessionCookieOptions() {
+  return {
+    httpOnly: true,
+    sameSite: config.production ? 'none' : 'lax',
+    secure: config.production,
+    path: '/',
+  };
+}
+
 export function issueSession(res, user) {
   const token = signToken(user);
   res.cookie(cookieName, token, {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: config.production,
+    ...sessionCookieOptions(),
     maxAge: 12 * 60 * 60 * 1000,
-    path: '/',
   });
   return token;
 }
 
 export function clearSession(res) {
-  res.clearCookie(cookieName, { path: '/' });
+  res.clearCookie(cookieName, sessionCookieOptions());
 }
 
 export function presentUser(user) {
