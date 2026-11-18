@@ -10,6 +10,7 @@ import { attendance, employees, salary } from './people.js';
 import { calendar, files, notes, notifications, search, settings } from './workspace.js';
 import personal from './personal.js';
 import reports from './reports.js';
+import targets from './targets.js';
 
 const api = Router();
 
@@ -20,6 +21,7 @@ api.use('/founder-finance', finance);
 api.use('/clients', clients);
 api.use('/projects', projects);
 api.use('/tasks', tasks);
+api.use('/targets', targets);
 api.use('/payments', payments);
 api.use('/income', income);
 api.use('/expenses', expenses);

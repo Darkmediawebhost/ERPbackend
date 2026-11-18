@@ -665,7 +665,29 @@ export const CalendarEvent = model('CalendarEvent', calendarEventSchema);
 export const StickyNote = model('StickyNote', stickyNoteSchema);
 export const Notification = model('Notification', notificationSchema);
 export const AuditLog = model('AuditLog', auditLogSchema);
+const targetSchema = new Schema(
+  {
+    _id: { type: String, default: 'company' },
+    dayPaise: { type: Number, default: 0, min: 0 },
+    weekPaise: { type: Number, default: 0, min: 0 },
+    monthPaise: { type: Number, default: 0, min: 0 },
+  },
+  { timestamps: true },
+);
+
+const targetEntrySchema = new Schema(
+  {
+    dateKey: { type: String, required: true, index: true },
+    amountPaise: { type: Number, required: true, min: 1 },
+    note: { type: String, default: '', trim: true, maxlength: 160 },
+    createdBy: { type: objectId, ref: 'User' },
+  },
+  { timestamps: true },
+);
+
 export const CompanySettings = model('CompanySettings', companySettingsSchema);
+export const Target = model('Target', targetSchema);
+export const TargetEntry = model('TargetEntry', targetEntrySchema);
 export const LoginCode = model('LoginCode', loginCodeSchema);
 export const Counter = model('Counter', counterSchema);
 export const PersonalEntry = model('PersonalEntry', personalEntrySchema);
