@@ -143,6 +143,7 @@ projects.patch('/:id', requirePerm('projects.manage'), wrap(async (req, res) => 
   const body = parse(projectBody.partial(), req.body);
   const project = await Project.findByIdAndUpdate(req.params.id, body, { new: true });
   if (!project) throw new HttpError('Project not found', 404);
+  if (body.clientId) await Task.updateMany({ projectId: project._id }, { clientId: project.clientId });
   res.json({ data: project });
 }));
 
