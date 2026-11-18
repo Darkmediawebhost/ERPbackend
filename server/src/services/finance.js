@@ -828,6 +828,7 @@ export function updateCharge(paymentId, input) {
     }
     payment.paymentType = input.paymentType;
     payment.invoiceAmountPaise = input.invoiceAmountPaise;
+    if (input.dueDate !== undefined) payment.dueDate = input.dueDate || '';
     const today = todayKey((await getSettings()).timezone);
     payment.status = paymentStatus(payment.invoiceAmountPaise, payment.amountReceivedPaise, payment.dueDate, today);
     await payment.save({ session });

@@ -18,7 +18,7 @@ import {
   Task,
   User,
 } from '../models.js';
-import { createCharge, createClientRecord, recordClientReceipt, refreshOverdues, updateCharge, updateClientReceipt, voidCharge } from '../services/finance.js';
+import { createCharge, createClientRecord, recordClientReceipt, refreshOverdues, updateCharge, updateClientReceipt, voidCharge, voidFinancial } from '../services/finance.js';
 import { chargeBody, clientBody, projectBody, receiptBody, taskBody } from './schemas.js';
 
 const clients = Router();
@@ -271,12 +271,26 @@ payments.post('/generate', requirePerm('payments.manage'), wrap(async (req, res)
 }));
 
 payments.patch('/:id', requirePerm('payments.manage'), wrap(async (req, res) => {
-  const body = parse(chargeBody.pick({ paymentType: true, amount: true }), req.body);
+  const body = parse(chargeBody.pick({ paymentType: true, amount: true, dueDate: true }), req.body);
   const doc = await updateCharge(req.params.id, {
     paymentType: body.paymentType,
     invoiceAmountPaise: body.amount,
+    dueDate: body.dueDate,
   });
   recordAudit(req, { action: 'update', entityType: 'clientPayment', entityId: doc._id, summary: 'Edited a client payment' });
+  res.json({ data: doc });
+}));
+
+payments.delete('/:id', requirePerm('payments.manage'), wrap(async (req, res) => {
+  const payment = await ClientPayment.findById(req.params.id);
+  if (!payment || payment.voided) throw new HttpError('Payment record not found', 404);
+  const today = todayKey();
+  const receipts = (payment.receipts || []).filter((receipt) => !receipt.reversed && receipt.journalEntryId);
+  for (const receipt of receipts) {
+    await voidFinancial(receipt.journalEntryId, req.user._id, 'Deleted client payment', today);
+  }
+  const doc = await voidCharge(req.params.id);
+  recordAudit(req, { action: 'delete', entityType: 'clientPayment', entityId: doc._id, summary: 'Deleted a client payment' });
   res.json({ data: doc });
 }));
 
