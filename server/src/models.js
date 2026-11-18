@@ -685,9 +685,19 @@ const targetEntrySchema = new Schema(
   { timestamps: true },
 );
 
+const workLinkSchema = new Schema(
+  {
+    name: { type: String, required: true, trim: true, maxlength: 120 },
+    url: { type: String, required: true, trim: true, maxlength: 2000 },
+    createdBy: { type: objectId, ref: 'User' },
+  },
+  { timestamps: true },
+);
+
 export const CompanySettings = model('CompanySettings', companySettingsSchema);
 export const Target = model('Target', targetSchema);
 export const TargetEntry = model('TargetEntry', targetEntrySchema);
+export const WorkLink = model('WorkLink', workLinkSchema);
 export const LoginCode = model('LoginCode', loginCodeSchema);
 export const Counter = model('Counter', counterSchema);
 export const PersonalEntry = model('PersonalEntry', personalEntrySchema);

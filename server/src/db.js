@@ -33,13 +33,14 @@ import {
   Task,
   Transaction,
   User,
+  WorkLink,
 } from './models.js';
 
 const models = [
   User, CoFounder, FounderContribution, FounderWithdrawal, ProfitDistribution, Client, Project, Task,
   ClientPayment, BankAccount, Transaction, LedgerAccount, JournalEntry, JournalLine, Invoice, InvoiceItem,
   Income, Expense, Employee, Attendance, SalaryRecord, CalendarEvent, StickyNote, Notification, AuditLog,
-  CompanySettings, Counter, PersonalEntry, StoredFile, LoginCode, Target, TargetEntry,
+  CompanySettings, Counter, PersonalEntry, StoredFile, LoginCode, Target, TargetEntry, WorkLink,
 ];
 
 export async function connectDatabase() {

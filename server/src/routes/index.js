@@ -11,6 +11,7 @@ import { calendar, files, notes, notifications, search, settings } from './works
 import personal from './personal.js';
 import reports from './reports.js';
 import targets from './targets.js';
+import works from './works.js';
 
 const api = Router();
 
@@ -22,6 +23,7 @@ api.use('/clients', clients);
 api.use('/projects', projects);
 api.use('/tasks', tasks);
 api.use('/targets', targets);
+api.use('/works', works);
 api.use('/payments', payments);
 api.use('/income', income);
 api.use('/expenses', expenses);
