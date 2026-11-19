@@ -364,6 +364,7 @@ const invoiceSchema = new Schema(
     notes: { type: String, default: '' },
     paymentInstructions: { type: String, default: '' },
     journalEntryId: { type: objectId, ref: 'JournalEntry' },
+    sentAt: Date,
     receipts: [receiptSchema],
     idempotencyKey: String,
     createdBy: { type: objectId, ref: 'User' },

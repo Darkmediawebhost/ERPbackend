@@ -1124,9 +1124,65 @@ export function issueInvoice(invoiceId, userId) {
     invoice.journalEntryId = posted.entry._id;
     invoice.paymentInstructions = invoice.paymentInstructions || settings.paymentInstructions || '';
     const today = todayKey(settings.timezone);
+    invoice.sentAt = invoice.sentAt || new Date();
     invoice.status = invoice.dueDate < today ? 'overdue' : 'sent';
     await invoice.save({ session });
+    const linked = await ClientPayment.findOne({ invoiceId: invoice._id, voided: false }).session(session);
+    if (!linked) {
+      await ClientPayment.create([invoiceChargeFields(invoice, userId, today)], { session });
+    }
     return invoice;
+  });
+}
+
+function invoiceChargeFields(invoice, userId, today) {
+  const dueDate = invoice.dueDate || invoice.dateKey || today;
+  const received = Math.min(Number(invoice.amountPaidPaise || 0), invoice.totalPaise);
+  return {
+    clientId: invoice.clientId,
+    projectId: invoice.projectId,
+    invoiceId: invoice._id,
+    paymentType: invoice.number ? `Invoice ${invoice.number}` : 'Invoice',
+    periodKey: `invoice-${invoice._id}`,
+    invoiceAmountPaise: invoice.totalPaise,
+    amountReceivedPaise: received,
+    dueDate,
+    status: paymentStatus(invoice.totalPaise, received, dueDate, today),
+    notes: invoice.number || '',
+    recordedBy: userId,
+    voided: false,
+  };
+}
+
+export async function ensureSentInvoicePayments(userId) {
+  const unmarked = await Invoice.find({ status: { $in: ['sent', 'partial', 'paid', 'overdue'] }, $or: [{ sentAt: null }, { sentAt: { $exists: false } }] });
+  for (const invoice of unmarked) {
+    invoice.sentAt = invoice.updatedAt || new Date();
+    await invoice.save();
+  }
+  const invoices = await Invoice.find({ status: { $in: ['sent', 'partial', 'paid', 'overdue'] }, totalPaise: { $gt: 0 } });
+  if (!invoices.length) return;
+  const existing = await ClientPayment.find({ invoiceId: { $in: invoices.map((invoice) => invoice._id) }, voided: false }).select('invoiceId');
+  const have = new Set(existing.map((row) => String(row.invoiceId)));
+  const missing = invoices.filter((invoice) => !have.has(String(invoice._id)));
+  if (!missing.length) return;
+  const today = todayKey((await getSettings()).timezone);
+  await ClientPayment.insertMany(missing.map((invoice) => invoiceChargeFields(invoice, userId, today)));
+}
+
+export function voidInvoicePayment(invoiceId) {
+  return runTxn(async (session) => {
+    const payment = await ClientPayment.findOne({ invoiceId, voided: false }).session(session);
+    if (!payment) return null;
+    const openReceipt = payment.receipts.some((receipt) => !receipt.reversed);
+    if (payment.amountReceivedPaise > 0 && openReceipt) {
+      throw new HttpError('Reverse the receipts before changing this invoice');
+    }
+    payment.amountReceivedPaise = 0;
+    payment.voided = true;
+    payment.status = 'void';
+    await payment.save({ session });
+    return payment;
   });
 }
 

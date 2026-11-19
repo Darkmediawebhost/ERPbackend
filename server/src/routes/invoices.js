@@ -9,7 +9,7 @@ import { Client, Invoice, InvoiceItem, JournalEntry, Project } from '../models.j
 import { formatInr } from '../money.js';
 import { sendMail } from '../services/mail.js';
 import { invoicePdf } from '../services/pdf.js';
-import { issueInvoice, recordInvoiceReceipt, refreshOverdues, saveDraftInvoice, voidFinancial } from '../services/finance.js';
+import { ensureSentInvoicePayments, issueInvoice, recordInvoiceReceipt, refreshOverdues, saveDraftInvoice, voidFinancial, voidInvoicePayment } from '../services/finance.js';
 import { getSettings } from '../settingsCache.js';
 import { invoiceBody, receiptBody } from './schemas.js';
 
@@ -18,6 +18,7 @@ router.use(requireUser);
 
 router.get('/', requirePerm('invoices.view'), wrap(async (req, res) => {
   await refreshOverdues();
+  await ensureSentInvoicePayments(req.user._id);
   const { page, limit, skip } = pageQuery(req.query);
   const filter = {};
   if (req.query.status) filter.status = req.query.status;
@@ -70,7 +71,9 @@ router.patch('/:id/status', requirePerm('invoices.manage'), wrap(async (req, res
     const fresh = await Invoice.findById(invoice._id);
     fresh.status = 'draft';
     fresh.amountPaidPaise = 0;
+    fresh.sentAt = undefined;
     await fresh.save();
+    await voidInvoicePayment(fresh._id);
     recordAudit(req, { action: 'update', entityType: 'invoice', entityId: fresh._id, summary: `Set invoice ${fresh.number || fresh._id} to draft` });
     res.json({ data: fresh });
     return;
@@ -99,6 +102,7 @@ router.delete('/:id', requirePerm('invoices.manage'), wrap(async (req, res) => {
   for (const receipt of receipts) {
     await voidFinancial(receipt.journalEntryId, req.user._id, 'Deleted invoice', today);
   }
+  await voidInvoicePayment(invoice._id);
   const current = await Invoice.findById(invoice._id);
   if (current?.journalEntryId) {
     const entry = await JournalEntry.findById(current.journalEntryId);

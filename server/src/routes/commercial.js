@@ -18,7 +18,7 @@ import {
   Task,
   User,
 } from '../models.js';
-import { createCharge, createClientRecord, recordClientReceipt, refreshOverdues, updateCharge, updateClientReceipt, voidCharge, voidFinancial } from '../services/finance.js';
+import { createCharge, createClientRecord, ensureSentInvoicePayments, recordClientReceipt, refreshOverdues, updateCharge, updateClientReceipt, voidCharge, voidFinancial } from '../services/finance.js';
 import { chargeBody, clientBody, projectBody, receiptBody, taskBody } from './schemas.js';
 
 const clients = Router();
@@ -210,6 +210,7 @@ tasks.post('/:id/comments', requirePerm('projects.view'), wrap(async (req, res) 
 
 payments.get('/', requirePerm('payments.view'), wrap(async (req, res) => {
   await refreshOverdues();
+  await ensureSentInvoicePayments(req.user._id);
   const { page, limit, skip } = pageQuery(req.query);
   const filter = { voided: req.query.includeVoid === 'true' ? { $in: [true, false] } : false };
   if (req.query.clientId) filter.clientId = req.query.clientId;
