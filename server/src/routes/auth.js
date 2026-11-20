@@ -48,7 +48,7 @@ router.get('/config', (_req, res) => {
       google: googleReady,
       googleClientId: config.google.clientId,
       otp: smtpReady,
-      company: 'DARK MEDIA',
+      company: 'DARK MEDIA ERP',
     },
   });
 });
@@ -86,7 +86,7 @@ router.post('/otp/request', limiter, wrap(async (req, res) => {
   const email = body.email.toLowerCase();
   assertLoginEmail(email);
   if (!smtpReady) {
-    throw new HttpError('Gmail cannot send the code yet. Create a Google App Password and put it in SMTP_PASS, then restart the API.', 503);
+    throw new HttpError('Gmail cannot send the code yet. Add the Gmail app password, then restart the API.', 503);
   }
   const code = String(randomInt(100000, 1000000));
   await LoginCode.updateMany({ email, used: false }, { used: true });
@@ -97,8 +97,8 @@ router.post('/otp/request', limiter, wrap(async (req, res) => {
   });
   await sendMail({
     to: email,
-    subject: 'Your Dark Media sign-in code',
-    text: `Your Dark Media sign-in code is ${code}.\n\nIt expires in 10 minutes. If you did not ask for this, ignore this email.`,
+    subject: 'Your Dark Media ERP sign-in code',
+    text: `Your Dark Media ERP sign-in code is ${code}.\n\nIt expires in 10 minutes. If you did not ask for this, ignore this email.`,
   });
   res.json({ data: { sent: true, email } });
 }));
@@ -127,7 +127,9 @@ router.post('/otp/verify', limiter, wrap(async (req, res) => {
 router.post('/dev', limiter, wrap(async (req, res) => {
   if (!config.allowDevAuth) throw new HttpError('Not found', 404);
   const body = parse(z.object({ email: z.string().email(), password: z.string().min(1) }), req.body);
-  const user = await User.findOne({ email: body.email.toLowerCase() }).select('+passwordHash');
+  const email = body.email.toLowerCase();
+  assertLoginEmail(email);
+  const user = await User.findOne({ email }).select('+passwordHash');
   if (!user?.passwordHash || !(await bcrypt.compare(body.password, user.passwordHash))) {
     throw new HttpError('Email or password is incorrect', 401);
   }
